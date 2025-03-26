@@ -8,5 +8,90 @@ authors:
 bibliography: references.bib
 ---
 
-## Section
-This is a simple placeholder for the manuscript's main document [@knuth84].
+## Project Proposal #1: Samantha Nauman
+
+1. Title:
+
+Temporal Dynamics of Chlorophyll-a Concentration in Seawater: Implications for Marine Ecosystem Health
+
+2. Justification:
+
+This project aims to evaluate temporal trends in chlorophyll-a in relation to sea surface temperature variations from 1998 to 2023. Anthropogenic impacts on marine food webs and effects of climate change can be found through tracking chlorophyll-a concentration over time. Chlorophyll-a is considered a widely accepted proxy for phytoplankton biomass and primary productivity in marine ecosystems [@huot2007relationship]. Previous studies show that the structure and functioning of today’s marine ecosystems depend critically on eukaryotic phytoplankton, which are primarily responsible for transporting organic matter to higher trophic levels [@falkowski2004evolution]. Over the period 1998-2023, significant climate variability and human-induced stressors have altered nutrient dynamics and water column stratification, potentially disrupting primary production. 
+
+3. Research objective/question/hypothesis:
+
+This study uses reliable satellite data on chlorophyll-a along with climate information to study these changes worldwide due to concentrations in chlorophyll-a in relation to sea surface temperature. **Hypothesis:** Rising sea surface temperatures correlate with decreasing chlorophyll-a concentrations due to increased stratification and reduced nutrient upwelling. 
+
+4. Proposed Methods:
+
+This study will integrate data from two primary sources: chlorophyll-a concentrations in global seawater from 1998 to 2023 dataset available through UN Environment Programme (UNEP) Data, and global mean sea surface temperature data from 1998 to 2023 with monthly means gathered from NASA Earthdata. Graphical representations, such as scatter plots and time series line graphs, will be created to visually compare the datasets and visualize the relationship between sea surface temperatures and chlorophyll-a concentrations. We plan to conduct time series analyses and utilize regression modeling across global marine regions to evaluate relationships among chlorophyll-a levels, sea surface temperature, and other possible climatic indices. Additionally, statistical methods, including correlation analysis and multivariate regression, will be used to quantify trends and determine the strength of the associations between these variables over defined spatial (global) and temporal (1998-2023) scales. Understanding these trends is essential for managing fisheries, predicting ecosystem shifts, and formulating climate adaptation strategies. 
+
+5. Expected Outcomes:
+
+In this project, it is expected that the analysis will reveal a significant negative correlation between increasing sea temperatures and chlorophyll-a concentrations, indicating potential declines in primary production. Such outcomes are crucial for understanding the broader impacts of climate change on marine ecosystems, supporting the development of adaptive management strategies and policies to ensure the sustainability of marine resources. 
+
+## Project Proposal #2: Samantha Nauman
+
+1. Title: 
+
+Integrating Biodiversity Conservation and Water Quality Assessments in U.S. Southwest River Basins
+
+2. Justification:
+
+Riparian habitats are among the most ecologically valuable regions, offering critical ecosystem services such as water filtration, biodiversity support, and habitat connectivity. Riparian zones are becoming increasingly subjective to anthropogenic disturbances stemming from water stress due to climate variability and degrading water quality [@busch1995mechanisms]. Therefore, this project seeks to identify regions where high biodiversity conservation value intersects with elevated water stress and compromised water quality. Past frameworks have been developed, concluding that nearly 80% of the world’s population is exposed to high levels of water security threats, while approximately 65% of continental discharge is at risk, highlighting the interconnected vulnerability of both human and freshwater systems [@vorosmarty2010global]. Ultimately, these insights will serve as a crucial foundation for developing sustainable water management strategies that preserve vulnerable ecosystems. 
+
+3. Research objective/question/hypothesis:
+
+This project aims to identify and promote the riparian areas in the U.S. Southwest that not only exhibit high biodiversity conservation value and experience significant water stress and water quality degradation **Hypothesis:** Regions of high ecological importance in major river basins are more vulnerable to external stressors, demonstrating poorer water quality metrics. 
+
+4. Proposed Methods:
+
+This study will integrate spatial maps on areas of global significance for biodiversity conservation and water stress levels from the UN Environment Programme (UNEP) with water quality data from the EPA Environmental and Social Resilience Data. By doing this, we can gain a comprehensive understanding of ecosystem vulnerability. Variables that can potentially diminish the production of ecological services, such as water quality and habitat fragmentation, may be considered within analyzing freshwater ecosystem susceptibility. The spatial scale will focus on the Southwest region of the United States of America, which includes the states California, Nevada, Arizona, New Mexico, Utah, and Colorado. Geographic Information System (GIS) techniques will be employed to layer areas of global significance for restoration along with levels of water stress on UNEP, while statistical tests on the EPA water quality data, such as correlation analysis, will be used to examine the relationships between biodiversity significance and water stress/quality levels. This combined numerical and spatial approach will provide a comprehensive assessment of ecosystem vulnerability.
+
+5. Expected Outcomes:
+
+The project is expected to generate areas that are recognized for their high conservation value due to supporting rich biodiversity, which are often found to be under significant environmental pressure, such as water stress and pollution, due to human activities. These variables are expected to be contributors to degraded water quality, even in biologically diverse freshwater ecosystems. 
+
+## Project Proposal #3: Hanna Velicer
+
+1. Title: 
+
+Analyzing Coral Reef Health in the Southern Hemisphere
+
+2. Justification:
+
+Coral reefs are under increasing threat due to ocean acidification, human activities, and climate change. These reefs play a crucial role in coastal protection and marine biodiversity but in recent decades, coral bleaching and overall reef degradation have caused overall ocean health to decline [@barber2001changing]. It is important to continue to monitor the health of these ecosystems to ensure their survival in the future. Traditional reef-monitoring methods tend to be laborious and geographically limited, making large-scale analysis essential for tracking the health of the reefs [@obura2019coral]. Understanding the changing health of these ecosystems and the factors that drive reef degradation is important for developing conservation efforts. Through models and statistical analysis, this research will provide useful insights in order to support data-driven conservation efforts.
+
+3. Research Objective/Question/Hypothesis:
+
+This project aims to analyze a publicly available dataset on coral reef sites in the Seychelles reefs throughout the western Indian Ocean to assess reef conditions. It will also look at another dataset focusing on how species abundance can increase reef health and productivity. **Hypothesis:** Coral reef health across the Southern Hemisphere is primarily influenced by water quality and abundance of species, and these factors can be used to predict reef conditions in the future.
+
+4. Proposed Methods:
+
+This study will utilize the *reef* dataset (https://r-packages.io/datasets/reef) and the *Chagos* dataset (https://r-packages.io/datasets/Chagos) to analyze coral reef health across the Southern Hemisphere. The *reef* dataset provides information on coral cover, species diversity/abundance, and overall environmental conditions. Whereas the *Chagos* dataset provides information on additional variables like fish abundance, benthic composition, and reef productivity/health. By using both datasets for our analysis, we will assess the relationship between environmental stressors/factors and coral reef health over a multi-year period. The study will cover reefs in the Southern Hemisphere, including the western Indian Ocean, with a temporal scope spanning the last 10 years, depending on the data availability. Some of the statistical tests we will run for this analysis include ANOVA tests in order to compare reef health in the different regions and correlation analysis to assess different variable relationships.
+
+5. Expected Outcomes:
+
+The project is expected to identify the most significant environmental factors affecting coral reef health and productivity in the Southern Hemisphere. The predictive models and statistical analysis will give some insight into future health trends, giving support for conservation efforts towards sustainable reef management.
+
+## Project Proposal #4: Hanna Velicer
+
+1. Title:
+
+Analyzing Primate Intelligence: Neural Activity and Cognitive Function in Rhesus macaques
+
+2. Justification:
+
+In the past decades, many studies have been published that confirm humans and non-human primates are not so different and share many traits. Understanding the level of intelligence that primates have can provide valuable insight into our own cognitive evolution, neural processing, and overall decision-making. Macaques are highly intelligent and social primates that are a perfect model for studying these various neural mechanisms. Research on neural activity patterns suggests that brain activity does in fact correlate with various cognitive abilities like learning and memory [@kim1999neural]. Performing research on non-human primates is extremely common, especially when it comes to neurological studies [@carlsson2004use]. Although it is not ideal to perform this research on animals, non-human primates are our closest relatives and provide a unique opportunity to learn more about our own evolution and cognitive function.
+
+3. Research Objective/Question/Hypothesis:
+
+This project aims to analyze publicly available datasets to explore how different neuron spikes relate to cognitive function. **Hypothesis:** Higher synchronization of neural spike activity correlates with improved cognitive performance in non-human primates.
+
+4. Proposed Methods:
+
+This study will uilize the *cortex* dataset (https://r-packages.io/datasets/cortex) and the *spikes* dataset (https://r-packages.io/datasets/spikes) to analyze neural activity in Rhesus macaques. The *cortex* dataset provides different recordings of various neural activity in the prefrontal cortext during cognitive tasks. The *spikes* dataset has detailed spike data that shows the firing and timing rates for individual neurons. Looking at both of these datasets together, we will analyze how the firing patterns correlate with task performance. The study will allow for a temporal analysis of neural activity across different cognitive states. We will use the ANOVA test to compare neural activity between different conditions and correlation analysis to assess relationships between firing rates and task success. 
+
+5. Expected Outcomes:
+
+This project is expected to show distinct neural activity patterns that correlate with cognitive task performance in Rhesus macaques, supporting the hypothesis that intelligence is linked to neural synchronization and different firing rates. These findings will contribute to a better understanding of primate cognition and overall intelligence.
