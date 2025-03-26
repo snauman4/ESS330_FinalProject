@@ -95,3 +95,49 @@ This study will uilize the *cortex* dataset (https://r-packages.io/datasets/cort
 5. Expected Outcomes:
 
 This project is expected to show distinct neural activity patterns that correlate with cognitive task performance in Rhesus macaques, supporting the hypothesis that intelligence is linked to neural synchronization and different firing rates. These findings will contribute to a better understanding of primate cognition and overall intelligence.
+
+## Project Proposal #5: Madi Schartz 
+
+1. Title:
+
+Analysis of Food Security in relation to Food Production within the United States
+
+2. Justification:
+
+The ability to explore the relationship between food insecurity and food production within the United States is a critical area of focus due to its interconnectedness and impacts with public health, social equity, sustainability, and economic stability. Despite being one of the largest food producers in the world, the United States faces high food insecurity rates with millions of people lacking consistent access to nutritious foods [@feedingamerica2023]. We know that the issue of food insecurity isn’t about supply due to this but is instead compounded by various factors including geographic disparities, inefficiencies with overconsumption and waste, and socioeconomic inequalities [@gundersen2015food]. In addition to these factors, we are increasingly understanding how the effects of climate change impact the agricultural sector through crop yields, trade, and availability [@bc3cdf4854bd446cb53ac88f2095b12c]. This project will explore how the location of where food is being produced and food security within the United States have a strong interconnectedness in strengthening a more sustainable future for all. 
+
+3. Research objective/question/hypothesis:
+
+The objective in this study is to analyze and understand how the factors of food security and food production interact and if there is a significant relationship between the two. The testable **Hypothesis:** There is a significant relationship between areas with food security and where food is produced. 
+
+4. Proposed Methods:
+
+In order to test the relationship between location of where food is being produced to food insecurity rates within the United States, I would use the data sets provided by Feeding America “Map the Meal Gap” report which provides quantitative data on the state and county-level within the United States on food insecurity in regards to multiple different factors (https://www.feedingamerica.org/research/map-the-meal-gap ) and the data sets provided by the U.S. Department of Agriculture (USDA) (USDA - National Agricultural Statistics Service - Colorado - Contact Us) for geographic data to measure the proximity. 
+The focus would be on the United States urban and rural areas with a temporal scale of the five years between 2018-2023. I would use statistical tests such as spatial regression analysis to explore this relationship between food insecurity and distance to food production areas. 
+
+5. Expected Outcomes:
+
+Based on the research objective, I expect to find that there is a significant relationship between where food is being produced and where there are either high or low levels of food security. I believe that food insecurity is truly an issue in accessibility instead of an issue of food supply so I would expect that the issue is being too far away from where food is being produced. The disconnection between accessible, affordable food and citizens is extremely important and it is needed to understand in order to provide solutions so citizens can remain healthy. 
+
+## Project Proposal #6: Madi Schartz 
+
+1. Title:
+
+Analysis of Food Insecurity on College Campuses and need for Urban Agriculture Initiatives
+
+2. Justification:
+
+Food insecurity is a growing issue that can no longer be ignored as it’s increasingly more prevalent in general populations within urban and university settings, where often students struggle to have accessible, affordable, and nutritious foods [@payne2018student]. In our nation, we have a huge disconnect between urban consumers in affluent cities and the farmers that produce their food creating a paradigm where we are heavily reliant on global retail systems and industrial commodities [@feedingamerica2023]. These systems create one-way flows of resources from rural areas to cities creating an unsustainable and unjust system for underpaid farmers and marginalized communities who are vulnerable to disruptions in food supply [@payne2018student]. Disparities such as the significantly varying food insecurity rates ranging from 2% in Griggs, North Dakota to 26% in Kusilvak, Alaska highlight the need for localized sustainable food systems  [@feedingamerica2023]. Creating initiatives on college campuses for urban agriculture could play a critical role in strengthening food security, connecting the bridge of knowledge between urban consumers and sustainable agricultural practices, and reducing the dependency on global supply chains. 
+
+3. Research objective/question/hypothesis:
+
+This project will aim to analyze the impacts of food insecurity among college students on urban campuses and how the role of urban agriculture can be interacted with to mitigate these issues. The **Hypothesis:** Urban agriculture initiatives on college campuses can significantly reduce food insecurity among students. 
+
+4. Proposed Methods:
+
+This study will use a mixed-methods approach combining the quantitative data sets provided through Feeding America “Map the Meal Gap” report which provides state and county-level data within the United States on food insecurity in regards to multiple different factors (https://www.feedingamerica.org/research/map-the-meal-gap ) and the qualitative data sets from surveying students provided by  Sage Journals “ Student Hunger on Campus : Food Insecurity Among College Students and Implications for Academic Institutions” (Student Hunger on Campus: Food Insecurity Among College Students and Implications for Academic Institutions - Devon C. Payne-Sturges, Allison Tjaden, Kimberly M. Caldeira, Kathryn B. Vincent, Amelia M. Arria, 2018). 
+The scope of this study will focus on college campuses within US cities on a temporal scale of one academic year. The statistical tests like chi-square and regression analysis will be used in order to see the correlationships between the relationship of food insecurity and urban agriculture solutions. 
+
+5. Expected Outcomes:
+
+I would expect to find several barriers and challenges in trying to implement urban agriculture on college campuses since if it was an easy solution it would’ve already been done. I think that we will find there is a significant relationship between urban agriculture and lower food insecurity rates.  I would also expect to find the insights of how deep the impacts of a sustainable food system would affect the physical, social, cultural, and mental health of students in urban college campuses. These are truly the most important reasons in conducting this analysis in the first place because diet and accessibility to food is a necessity and from my own experience it is a huge struggle at this transitory time of life. 
