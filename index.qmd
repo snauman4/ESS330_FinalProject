@@ -1,8 +1,8 @@
 ---
 title: ESS 330 Project Proposals
 authors:
-  - name: Norah Jones
-    affiliation: The University
+  - name: Samantha Nauman, Hanna Velicer, Madison Schartz
+    affiliation: Colorado State University
     roles: writing
     corresponding: true
 bibliography: references.bib
