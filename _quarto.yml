@@ -1,7 +1,6 @@
 project:
-  type: manuscript
   output-dir: docs
-  type: website
+  type: manuscript
 
 manuscript:
   article: index.qmd
