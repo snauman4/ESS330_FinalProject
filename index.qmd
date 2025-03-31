@@ -1,7 +1,7 @@
 ---
 title: ESS 330 Project Proposals
 authors:
-  - name: Samantha Nauman
+  - name: Samantha Nauman, Hanna Velicer, Madison Schartz
     affiliation: Colorado State University
     roles: writing
     corresponding: true
