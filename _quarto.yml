@@ -17,6 +17,7 @@ format:
 
 execute:
   freeze: true
+  echo: true 
 
 
 
