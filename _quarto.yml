@@ -9,6 +9,7 @@ format:
   html:
     comments:
       hypothesis: true
+    code-fold: true
   docx: default
   jats: default
 

@@ -11,15 +11,7 @@ execute:
 ---
 # Drafting the Introduction, Background, and Motivation for the Project
 
-  Water quality is currently one of the most pressing environmental challenges across the globe, directly impacting both ecosystem and human health, along with biodiversity. Looking specifically at Colorado, there are growing concerns over the state of local river systems due to increased runoff and nutrient pollution (@ator2022effects). These concerns call for a better understanding of how protection policies could help mitigate threats to water quality. While some laws and frameworks are in place to control pollution and other harmful factors, these protections vary in their ability to truly protect aquatic ecosystems. In this project, we will be addressing the hypothesis that areas designated as “protected,” due to endangered species, their location, etc., have stronger safeguards against various environmental stressors (ie pollution) than areas with no “protected” designation, leading to better water quality. This research is crucial for aiding in conservation policy, especially with increasing urbanization, climate change, and ongoing pollution. 
-  
-  River ecosystems serve as habitat for many organisms and also provide economic resources. Despite this, they continue to be threatened by anthropogenic activities like agriculture and industrial development. To combat these threats, protected area frameworks like the National Parks have been introduced to preserve these ecosystems from further harm. The study region for this project will be narrowed down to the Cache la Poudre River within Larimer County, where there are multiple protected and unprotected areas. This river system flows through wilderness in addition to more developed, urban areas. We selected two monitoring sites along the river to use for our comparison: one unprotected site that is upstream (USGS 06751490) and one protected site that is downstream and part of a National Wild and Scenic River system (USGS 06752260). Using two points along the same river will allow us to see water quality measurements taken over a 20-year span and see how the quality has changed over time in relatively similar conditions. This contrast will allow for a direct comparison to see how protection status affects water quality trends. 
-
-  The topic of this project was driven by a growing appreciation for data-based policy and its increasing importance for environmental protection. By looking at a specific river with both protected and unprotected areas, we hope to pinpoint the true effects that protective status has on water quality. Additionally, by analyzing more than two decades of data, 2003 to 2024, we will be able to spot long-term trends rather than random deviations. Our motivation for this topic also comes from the local significance of the Cache la Poudre River. Being Colorado State University undergraduate students in the Warner College of Natural Resources, we recognize the ecological importance and impact the river system has on the surrounding areas. It is an essential water source for agriculture and also home to the local biodiversity, including both aquatic and riparian species. Comparing the upstream and downstream areas of the river system in this project provides the opportunity to see how protection status affects ecosystems against human and environmental impacts on a more local level. 
-To conduct our analysis, we will use publicly available data from U.S. Geological Survey (USGS) and the Colorado Climate Center at Colorado State University. The USGS streamstats will look at the variables of temperatures and discharge flow rates for our two sites along the Cache la Poudre River. Looking towards the climate side of things, the data from the Colorado Climate Center will provide temperature and precipitation data for areas within Larimer County, including the Cache la Poudre River. 
-  We began our project by visiting a USGS spatial map on protected areas in the United States to identify our study region. We then went to the USGS National Water Information System and Colorado Climate Center - CSU sites respectively for our various water quality data described above. Finally, we found two points that contain data in a protected and unprotected area over a 20-year period from the beginning of the water year in 2004 (October 1, 2003) to the beginning of the water year in 2025 (October 1, 2024). The protected site, USGS 06752260, is located along the Cache la Poudre River in Fort Collins, CO, at an elevation of 4,940 feet, and is part of the National Wild and Scenic River, giving it the “protected” distinction. The unprotected site, USGS 06751490, is located on the North Fork of the Cache la Poudre River in Livermore, CO, at an elevation of 5,715 feet and is not associated with any environmental protection. Although this site does not have any special environmental protections, it is still a site where USGS collects and monitors water data, including water quality. 
-  
-  In addition to spatial comparisons, we will also use temporal analysis to look for long-term trends in discharge flow rates and temperature. We hope to establish whether protected sites display statistically significant differences in our described variables compared to the unprotected sites. RStudio will be used to map, visualize, and statistically analyze the data. 
+BLAH
 
 # Exploring the Data
 
@@ -32,206 +24,632 @@ library(lubridate)
 library(ggpubr)
 library(plotly)
 library(dplyr)
+library(tsibble)
 
-# downloading the USGS station data: unprotected
-Qdata_unprotected=readNWISdv(siteNumber='06751490',
-                  parameterCd='00060',
-                  startDate='2004-10-01', #beginning of wateryear 2016
-                  endDate='2024-10-01') %>%
-  renameNWISColumns()
+  # CO unprotected 1
+QCO_unpro1=readNWISdv(
+  siteNumber= c('09034250'),
+  parameterCd= c('00060'),
+  startDate='1975-10-01', #beginning of wateryear 1976
+  endDate='2024-10-01') %>%
+  renameNWISColumns() %>%
+  mutate(Date = yearmonth(Date)) %>%
+  group_by(site_no, Date) %>%
+  summarise(Flow = mean(Flow, na.rm = TRUE), .groups = "drop")
 
-# downloading the USGS station data: protected
-Qdata_protected=readNWISdv(siteNumber='06752260',
-                  parameterCd='00060',
-                  startDate='2004-10-01', #beginning of wateryear 2016
-                  endDate='2024-10-01') %>%
-  renameNWISColumns()
-
-# convert Q from cfs to mm/d
-Qdata_unprotected <- Qdata_unprotected %>%
-  mutate(Q_mmd = Flow*86400/269/5280/5280*304.8)
-
-Qdata_protected <- Qdata_protected %>%
-  mutate(Q_mmd = Flow*86400/269/5280/5280*304.8)
-
-# create year and month columns
-Qdata_unprotected <- Qdata_unprotected %>%
-  mutate(month = month(Date),
-         WaterYear=ifelse(month>9,year(Date)+1,year(Date)))
-
-Qdata_protected <- Qdata_protected %>%
-  mutate(month = month(Date),
-         WaterYear=ifelse(month>9,year(Date)+1,year(Date)))
-
-# annual totals
-Qannual_unpro <- Qdata_unprotected %>%
-  group_by(WaterYear) %>%
-  summarize(Q_mmdtotal=sum(Q_mmd),maxQ=max(Flow),minQ=min(Flow))
-
-Qannual_pro <- Qdata_protected %>%
-  group_by(WaterYear) %>%
-  summarize(Q_mmdtotal=sum(Q_mmd),maxQ=max(Flow),minQ=min(Flow)) 
-
-# binding the data tables together
-Qannual_merged <- bind_rows(
-  Qannual_unpro %>% mutate(site = "Unprotected"),
-  Qannual_pro %>% mutate(site = "Protected"))
-
-# plot annual vs year
-annual_Q_totals <- 
-  ggplot(Qannual_merged, aes(x = WaterYear, y = Q_mmdtotal, colour = site, group = site)) +
-  geom_line() +
-  geom_point() +
-  labs(title = "Annual Total Discharge", 
-       x = "Water Year",
-       y = "Q total (mm)",
-       colour = "Site Type") +
-  theme_minimal()
-print(annual_Q_totals)
-```
-  Data for discharge from 2003-10-01 (water year 2004) to 2024-10-01 (first day of water year 2025) for the USGS sites 06751490 and 06752260 were retrieved from the USGS NWIS site. Following that, the data received was flow/discharge in cfs (cubic feet per second). Therefore, it was best for visualization to convert it to mm/d. Then, creating year and month columns through an ifelse statement allowed for the months to be categorized into a number so that the data groups the data by the hydrologic year (October-September), making it easier to pull out seasonal patterns. In addition, summarizing annual totals allows for better visual comparison between the two rivers. 
-
-```{r}
-# Protected site data from CCC
-
-Protected_data_URL <- 'https://raw.githubusercontent.com/madi-schartz/Lab6/main/data/Protected_data.csv'
-
-Protected_data <- readr::read_csv(Protected_data_URL)
-
-# Unprotected site data from CCC
-
-Unprotected_data_URL <- 'https://raw.githubusercontent.com/madi-schartz/Lab6/main/data/Unprotected_data.csv'
-
-Unprotected_data <- readr::read_csv(Unprotected_data_URL)
-
-# Check for missing values
-
-sum(is.na(Protected_data))
-sum(is.na(Unprotected_data))
-
-colSums(is.na(Protected_data))
-colSums(is.na(Unprotected_data))
-
-# remove rows with missing values
-
-Protected_data_clean <- na.omit(Protected_data)
-Unprotected_data_clean <- na.omit(Unprotected_data)
-
-# Convert the Temperature columns in both data sets to numeric
-
-Protected_data_clean$`Max Temperature` <- as.numeric(Protected_data_clean$`Max Temperature`)
-Protected_data_clean$`Min Temperature` <- as.numeric(Protected_data_clean$`Min Temperature`)
-
-Unprotected_data_clean$`Max Temperature` <- as.numeric(Unprotected_data_clean$`Max Temperature`)
-Unprotected_data_clean$`Min Temperature` <- as.numeric(Unprotected_data_clean$`Min Temperature`)
-
-# Calculate the mean temperature 
-
-Protected_data_clean$mean_temp <- rowMeans(Protected_data_clean[, c("Max Temperature", "Min Temperature")], na.rm = TRUE)
-
-Unprotected_data_clean$mean_temp <- rowMeans(Unprotected_data_clean[, c("Max Temperature", "Min Temperature")], na.rm = TRUE)
-
-# Add a site identifier column to each data set
-Protected_data_clean$site <- "Fort Collins Protected Site"
-Unprotected_data_clean$site <- "North Fork Unprotected Site"
-
-# Calculate mean temperature for each data set if not already done
-
-Protected_data_clean$mean_temp <- rowMeans(Protected_data_clean[, c("Max Temperature", "Min Temperature")], na.rm = TRUE)
-
-Unprotected_data_clean$mean_temp <- rowMeans(Unprotected_data_clean[, c("Max Temperature", "Min Temperature")], na.rm = TRUE)
-
-# Add a site identifier column to each data set
-Protected_data_clean$site <- "Fort Collins Protected Site"
-Unprotected_data_clean$site <- "North Forks Unprotected Site"
-
-# Extract month from the Year/month column
-Protected_data_clean$month <- as.numeric(sub("^.*/", "", Protected_data_clean$`Year/Month`))
-Unprotected_data_clean$month <- as.numeric(sub("^.*/", "", Unprotected_data_clean$`Year/Month`))
-
-# Combine data sets - using the actual column name for mean temperature
-combined_monthly <- bind_rows(
-  Protected_data_clean %>% select(month, mean_temp, site),
-  Unprotected_data_clean %>% select(month, mean_temp, site)
+pHWT_COunpro1 <- read.csv(
+  "https://raw.githubusercontent.com/snauman4/ESS330_FinalProject/main/CO_dataunprotected1.csv",
+  stringsAsFactors = FALSE
 )
 
-# Convert month numbers to month names for better visualization
-month_labels <- c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
-combined_monthly$month_name <- month_labels[combined_monthly$month]
-combined_monthly$month_name <- factor(combined_monthly$month_name, levels = month_labels)
+# 2. Compute daily means of Temp and pH
+DailypW_COunpro1 <- pHWT_COunpro1 %>%
+  # parse your Date
+  mutate(Date = mdy(Date)) %>%
+  # drop the qualifier columns and coerce the true max/min to numeric
+  mutate(across(
+    c(Temp..max., Temp..min., pH..max., pH..min.),
+    ~ as.numeric(.)
+  )) %>%
+  # compute a rowwise mean of temp and of pH
+  mutate(
+    Temp_mean = rowMeans(select(., Temp..max., Temp..min.), na.rm = TRUE),
+    pH_mean   = rowMeans(select(., pH..max.,    pH..min.),    na.rm = TRUE)
+  ) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    `Temp (C)`  = mean(Temp_mean, na.rm = TRUE),
+    `pH (mean)` = mean(pH_mean,   na.rm = TRUE),
+    .groups = "drop"
+  )
 
-# Calculate monthly averages for protected site
-Protected_data_clean <- Protected_data_clean %>%
-  rename(YearMonth = `Year/Month`) %>%      # Rename for convenience
-  mutate(Date = ym(YearMonth)) 
+# 3. Roll those daily means up to monthly to line up with your flow data
+Month_COunpro1 <- DailypW_COunpro1 %>%
+  mutate(
+    Date = yearmonth(Date)
+  ) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    `Temp (C)`  = mean(`Temp (C)`,  na.rm = TRUE),
+    `pH (mean)` = mean(`pH (mean)`, na.rm = TRUE),
+    .groups = "drop"
+  )
 
-monthly_protected <- Protected_data_clean %>%
-  mutate(month = month(Date)) %>%
-  group_by(month, site) %>%
-  summarize(mean_temp = mean(mean_temp, na.rm = TRUE), .groups = "drop")
+# make sure site_no is character in both data sets
+QCO_unpro1 <- QCO_unpro1 %>%
+  mutate(
+    site_no = as.character(site_no),        # ensure it’s a string
+    Date    = yearmonth(Date)               # ensure it’s a yearmonth
+  )
 
-# Calculate monthly averages for unprotected site
-Unprotected_data_clean <- Unprotected_data_clean %>%
-  rename(YearMonth = `Year/Month`) %>%      # rename for convenience
-  mutate(Date = ym(YearMonth)) 
+Month_COunpro1 <- Month_COunpro1 %>%
+  mutate(
+    site_no = str_pad(as.character(site_no), width = 8, pad = "0"),
+       # pad out to 8 digits with leading zeros
+    Date    = yearmonth(Date)
+  )
 
-monthly_unprotected <- Unprotected_data_clean %>%
-  mutate(month = month(Date)) %>%
-  group_by(month, site) %>%
-  summarize(mean_temp = mean(mean_temp, na.rm = TRUE), .groups = "drop")
+# now the join will work
+COdata_unprotected1 <- QCO_unpro1 %>%
+  left_join(Month_COunpro1, by = c("site_no","Date")) %>%
+  select(site_no, Date, Flow, `Temp (C)`, `pH (mean)`)
 
-# Combine data sets for plotting
-combined_monthly <- bind_rows(
-  monthly_protected %>% mutate(site = "Fort Collins Protected Site"),
-  monthly_unprotected %>% mutate(site = "North Fork Unprotected Site")
+  # CO unprotected 2
+QCO_unpro2=readNWISdv(
+  siteNumber= c('09147500'),
+  parameterCd= c('00060'),
+  startDate='1975-10-01', #beginning of wateryear 1976
+  endDate='2024-10-01') %>%
+  renameNWISColumns() %>%
+  mutate(Date = yearmonth(Date)) %>%
+  group_by(site_no, Date) %>%
+  summarise(Flow = mean(Flow, na.rm = TRUE), .groups = "drop")
+
+pHWT_COunpro2 <- read.csv(
+  "https://raw.githubusercontent.com/snauman4/ESS330_FinalProject/main/CO_dataunprotected2.csv",
+  stringsAsFactors = FALSE
 )
 
-# Combine data sets for plotting
-combined_monthly <- bind_rows(monthly_protected, monthly_unprotected)
+# 2. Compute daily means of Temp and pH
+DailypW_COunpro2 <- pHWT_COunpro2 %>%
+  # parse your Date
+  mutate(Date = mdy(Date)) %>%
+  # drop the qualifier columns and coerce the true max/min to numeric
+  mutate(across(
+    c(Temp..max., Temp..min.),
+    ~ as.numeric(.)
+  )) %>%
+  # compute a rowwise mean of temp and of pH
+  mutate(
+    Temp_mean = rowMeans(select(., Temp..max., Temp..min.), na.rm = TRUE)
+  ) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    `Temp (C)`  = mean(Temp_mean, na.rm = TRUE),
+    .groups = "drop"
+  )
 
-# Convert month number to month name for better x-axis labels
-combined_monthly$month_name <- month.abb[combined_monthly$month]
-combined_monthly$month_name <- factor(combined_monthly$month_name, levels = month.abb)
+# 3. Roll those daily means up to monthly to line up with your flow data
+Month_COunpro2 <- DailypW_COunpro2 %>%
+  mutate(
+    Date = yearmonth(Date)
+  ) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    `Temp (C)`  = mean(`Temp (C)`,  na.rm = TRUE),
+    .groups = "drop"
+  )
 
-# Create plot
-ggplot(combined_monthly, aes(x = month_name, y = mean_temp, group = site, color = site)) +
-  geom_line(size = 1.2) +
-  geom_point(size = 3) +
-  scale_color_manual(values = c("Fort Collins Protected Site" = "darkblue", "North Forks Unprotected Site" = "darkred")) +
-  labs(
-    x = "Month", 
-    y = "Mean Temperature (°C)",
-    title = "Monthly Mean Temperature: Protected vs. Unprotected Sites in the Cache la Poudre",
-    color = "Site Type"
-  ) +
-theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold", size = 14),
-    axis.text = element_text(size = 10),
-    axis.title = element_text(size = 12),
-    legend.position = "bottom"
+# make sure site_no is character in both data sets
+QCO_unpro2 <- QCO_unpro2 %>%
+  mutate(
+    site_no = as.character(site_no),        # ensure it’s a string
+    Date    = yearmonth(Date)               # ensure it’s a yearmonth
+  )
+
+Month_COunpro2 <- Month_COunpro2 %>%
+  mutate(
+    site_no = str_pad(as.character(site_no), width = 8, pad = "0"),
+       # pad out to 8 digits with leading zeros
+    Date    = yearmonth(Date)
+  )
+
+# now the join will work
+COdata_unprotected2 <- QCO_unpro2 %>%
+  left_join(Month_COunpro2, by = c("site_no","Date")) %>%
+  select(site_no, Date, Flow, `Temp (C)`)
+
+  # CA unprotected 
+QCA_unpro=readNWISdv(
+  siteNumber= c('11074000'),
+  parameterCd= c('00060'),
+  startDate='1975-10-01', #beginning of wateryear 1976
+  endDate='2024-10-01') %>%
+  renameNWISColumns() %>%
+  mutate(Date = yearmonth(Date)) %>%
+  group_by(site_no, Date) %>%
+  summarise(Flow = mean(Flow, na.rm = TRUE), .groups = "drop")
+
+pHWT_CAunpro <- read.csv(
+  "https://raw.githubusercontent.com/snauman4/ESS330_FinalProject/main/CA_dataunprotected.csv",
+  stringsAsFactors = FALSE
+)
+
+# 2. Compute daily means of Temp and pH
+DailypW_CAunpro <- pHWT_CAunpro %>%
+  # parse your Date
+  mutate(Date = mdy(Date)) %>%
+  # drop the qualifier columns and coerce the true max/min to numeric
+  mutate(across(
+    c(Temp..max., Temp..min.),
+    ~ as.numeric(.)
+  )) %>%
+  # compute a rowwise mean of temp and of pH
+  mutate(
+    Temp_mean = rowMeans(select(., Temp..max., Temp..min.), na.rm = TRUE)
+  ) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    `Temp (C)`  = mean(Temp_mean, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# 3. Roll those daily means up to monthly to line up with your flow data
+Month_CAunpro <- DailypW_CAunpro %>%
+  mutate(
+    Date = yearmonth(Date)
+  ) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    `Temp (C)`  = mean(`Temp (C)`,  na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# make sure site_no is character in both data sets
+QCA_unpro <- QCA_unpro %>%
+  mutate(
+    site_no = as.character(site_no),        # ensure it’s a string
+    Date    = yearmonth(Date)               # ensure it’s a yearmonth
+  )
+
+Month_CAunpro <- Month_CAunpro %>%
+  mutate(
+    site_no = str_pad(as.character(site_no), width = 8, pad = "0"),
+    Date    = yearmonth(Date))
+
+CAdata_unprotected <- QCA_unpro %>%
+  left_join(Month_CAunpro, by = c("site_no","Date")) %>%
+  select(site_no, Date, Flow, `Temp (C)`)
+
+  # AZ unprotected 
+AZunproraw <- read.csv(
+  "https://raw.githubusercontent.com/madi-schartz/ESS330-FINAL/refs/heads/master/AZdata_unprotected.csv",
+  stringsAsFactors = FALSE
+)
+
+# add pH
+DailypW_AZunpro <- AZunproraw %>%
+  mutate(Date = mdy(Date)) %>% 
+  mutate(across(
+    c(Temp..mean.),
+    ~ as.numeric(.)
+  )) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    Flow       = mean(Discharge..Mean., na.rm = TRUE),
+    `Temp (C)` = mean(Temp..mean.,        na.rm = TRUE),
+    .groups    = "drop"
+  )
+
+AZdata_unprotected <- DailypW_AZunpro %>%
+  mutate(Date = yearmonth(Date)) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    Flow       = mean(Flow,       na.rm = TRUE),
+    `Temp (C)` = mean(`Temp (C)`, na.rm = TRUE),
+    .groups    = "drop"
+  )
+
+  # UT unprotected
+UTunproraw <- read.csv(
+  "https://raw.githubusercontent.com/madi-schartz/ESS330-FINAL/refs/heads/master/UTdata_unprotected.csv",
+  stringsAsFactors = FALSE
+)
+
+DailypW_UTunpro <- UTunproraw %>%
+  mutate(Date = mdy(Date)) %>% 
+  mutate(across(
+    c(Discharge,`Temp..Min.`,`Temp..Max.`, `pH..Max.`, `pH..Min.`),
+    ~ as.numeric(.)
+  )) %>%
+  mutate(
+    Temp_mean = rowMeans(select(., Temp..Max.,  Temp..Min.), na.rm = TRUE),
+    pH_mean   = rowMeans(select(., pH..Max.,     pH..Min.),    na.rm = TRUE)
+  ) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    Flow       = mean(Discharge, na.rm = TRUE),
+    `Temp (C)` = mean(Temp_mean,        na.rm = TRUE),
+    `pH (mean)`= mean(pH_mean,          na.rm = TRUE),
+    .groups    = "drop"
+  )
+
+# 3. roll up to monthly
+UTdata_unprotected <- DailypW_UTunpro %>%
+  mutate(Date = yearmonth(Date)) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    Flow       = mean(Flow,       na.rm = TRUE),
+    `Temp (C)` = mean(`Temp (C)`, na.rm = TRUE),
+    `pH (mean)`= mean(`pH (mean)`,na.rm = TRUE),
+    .groups    = "drop"
   )
 ```
-  Data for temperature was found through the Colorado Climate Center- CSU which had two different data sets for our protected and unprotected sites along the Cache la Poudre. The protected site within Fort Collins has data only from 2016-2017 so it was more limited than what we were wanting but the unprotected site has data from 2003-2024 which aligns with the time frame we were wanting to look at. The data was pretty straight forward from there without needing too much cleaning, we only added a mean temperature column to make tests, visualizing, and plotting easier as the original data source had it separated into Min Temp and Max Temp columns.
 
-# Identify your Preliminary Methods
 
-1. What are you thinking about using to analyze your data to answer your question?
+```{r}
+head(COdata_unprotected1)
+head(COdata_unprotected2)
+head(CAdata_unprotected)
+head(UTdata_unprotected)
+```
 
-In the future to further analyze the data, we can possibly test if there is a relationship between temperature and discharge/flow. For example, doing a linear regression model could test for linear association. We also found data for precipitation so we can run some statistical tests to see if precipitation, temperature, and discharge are all correlated in affecting water quality then further to see if there's a difference in the water quality between the unprotected and protected water sites. 
+```{r}
+  # CO protected 1
+QCO_pro1=readNWISdv(
+  siteNumber= c('06752260'),
+  parameterCd= c('00060'),
+  startDate='1975-10-01', #beginning of wateryear 1976
+  endDate='2024-10-01') %>%
+  renameNWISColumns() %>%
+  mutate(Date = yearmonth(Date)) %>%
+  group_by(site_no, Date) %>%
+  summarise(Flow = mean(Flow, na.rm = TRUE), .groups = "drop")
 
-2. Do you have everything you need? What supplemental data might you need?
+pHWT_COpro1 <- read.csv(
+  "https://raw.githubusercontent.com/snauman4/ESS330_FinalProject/main/CO_dataprotected1.csv",
+  stringsAsFactors = FALSE
+)
 
-Some supplemental data that we might need is water quality data such as nutrient loads, dissolved oxygen, pH, turbidity, or contaminant levels. This would provide insights to assessing pollution impacts and ecological health, allowing us to test whether protected areas with endangered species or within national parks maintain better water quality compared to unprotected downstream areas. 
+DailypW_COpro1 <- pHWT_COpro1 %>%
+  mutate(Date = mdy(Date)) %>%
+  mutate(across(
+    c(Temp..max., Temp..min.),
+    ~ as.numeric(.))) %>%
+  mutate(
+    Temp_mean = rowMeans(select(., Temp..max., Temp..min.), na.rm = TRUE),
+    pH_mean = rowMeans(select(., pH..max., pH..min.), na.rm = TRUE)) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    `Temp (C)`  = mean(Temp_mean, na.rm = TRUE),
+    `pH (mean)` = mean(pH_mean, na.rm = TRUE),
+    .groups = "drop")
 
-3. What are some potential challenges you see in the data?
+Month_COpro1 <- DailypW_COpro1 %>%
+  mutate(
+    Date = yearmonth(Date)) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    `Temp (C)`  = mean(`Temp (C)`,  na.rm = TRUE),
+    `pH (mean)` = mean(`pH (mean)`, na.rm = TRUE),
+    .groups = "drop")
 
-Some potential challenges that I see in the data is getting longer time periods due to the fact that a lot of datasets were removed from USGS data. Also, our temperature data, there wasn’t anything in the USGS for it so we had to go to another source that had data from 2003-2024 for our protected site but for the unprotected site it only had 2016-2017 which is a challenge for what we wanted to show on our time frame.
+QCO_pro1 <- QCO_pro1 %>%
+  mutate(
+    site_no = as.character(site_no),        
+    Date    = yearmonth(Date))
 
-4. What are some potential challenges you see in the methods?
+Month_COpro1 <- Month_COpro1 %>%
+  mutate(
+    site_no = str_pad(as.character(site_no), width = 8, pad = "0"),
+    Date    = yearmonth(Date))
 
-Some potential challenges within the methods include getting data for the USGS sites, specifically considering that they did not contain the water quality data that we were looking for. Although we were able to find temperature and discharge, finding additional supplemental data would be very helpful in addressing the proposed problem. Therefore, one challenge is finding the specific points where water quality data (was not found on USGS) will be located for the given period and precise site locations.
+COdata_protected1 <- QCO_pro1 %>%
+  left_join(Month_COpro1, by = c("site_no","Date")) %>%
+  select(site_no, Date, Flow, `Temp (C)`, `pH (mean)`)
 
-5. How do the selected methods help you get to your final goals?
+  # CO protected 2
+QCO_pro2=readNWISdv(
+  siteNumber= c('09163500'),
+  parameterCd= c('00060'),
+  startDate='1975-10-01', #beginning of wateryear 1976
+  endDate='2024-10-01') %>%
+  renameNWISColumns() %>%
+  mutate(Date = yearmonth(Date)) %>%
+  group_by(site_no, Date) %>%
+  summarise(Flow = mean(Flow, na.rm = TRUE), .groups = "drop")
 
-Our selected methods that we have done already with doing data exploratory analysis with our predictor variables of water temperatures and discharge rates have shown given us a strong foundation of where we need more data and tests to be done in order to get to our final goals of analyzing how water quality differs at our protected and unprotected water sites along the Cache la Poudre. We have addressed the prior questions for our preliminary methods based off of our exploratory data analysis and from there our methods of further doing statistical tests, linear regressions, and finding supplemental data for more predictor variables in relation to water quality will greatly aid in our ability to see any correlation and analyze the relationship between all our variables and water quality to provide us something to then compare on both sites with which is our final goal. 
+pHWT_COpro2 <- read.csv(
+  "https://raw.githubusercontent.com/snauman4/ESS330_FinalProject/main/CO_dataprotected2.csv",
+  stringsAsFactors = FALSE
+)
+
+DailypW_COpro2 <- pHWT_COpro2 %>%
+  mutate(Date = mdy(Date)) %>%
+  mutate(across(
+    c(Temp..max., Temp..min.),
+    ~ as.numeric(.))) %>%
+  mutate(
+    Temp_mean = rowMeans(select(., Temp..max., Temp..min.), na.rm = TRUE),
+    pH_mean = rowMeans(select(., pH..max., pH..min.), na.rm = TRUE)) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    `Temp (C)`  = mean(Temp_mean, na.rm = TRUE),
+    `pH (mean)` = mean(pH_mean, na.rm = TRUE),
+    .groups = "drop")
+
+Month_COpro2 <- DailypW_COpro2 %>%
+  mutate(
+    Date = yearmonth(Date)) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    `Temp (C)`  = mean(`Temp (C)`,  na.rm = TRUE),
+    `pH (mean)` = mean(`pH (mean)`, na.rm = TRUE),
+    .groups = "drop")
+
+QCO_pro2 <- QCO_pro2 %>%
+  mutate(
+    site_no = as.character(site_no),       
+    Date    = yearmonth(Date))
+
+Month_COpro2 <- Month_COpro2 %>%
+  mutate(
+    site_no = str_pad(as.character(site_no), width = 8, pad = "0"),
+    Date    = yearmonth(Date))
+
+COdata_protected2 <- QCO_pro2 %>%
+  left_join(Month_COpro2, by = c("site_no","Date")) %>%
+  select(site_no, Date, Flow, `Temp (C)`, `pH (mean)`)
+
+  # CA protected
+QCA_pro=readNWISdv(
+  siteNumber= c('11044000'),
+  parameterCd= c('00060'),
+  startDate='1975-10-01', #beginning of wateryear 1976
+  endDate='2024-10-01') %>%
+  renameNWISColumns() %>%
+  mutate(Date = yearmonth(Date)) %>%
+  group_by(site_no, Date) %>%
+  summarise(Flow = mean(Flow, na.rm = TRUE), .groups = "drop")
+
+pHWT_CApro <- read.csv(
+  "https://raw.githubusercontent.com/snauman4/ESS330_FinalProject/main/CA_dataprotected.csv",
+  stringsAsFactors = FALSE
+)
+
+DailypW_CApro <- pHWT_CApro %>%
+  mutate(Date = mdy(Date)) %>%
+  mutate(across(
+    c(Temp..max., Temp..min.,`pH..max.`, `pH..min.`),
+    ~ as.numeric(.),
+    .names = "{.col}")
+  ) %>%
+  mutate(
+    Temp_mean = rowMeans(select(., Temp..max., Temp..min.), na.rm = TRUE),
+    pH_mean   = rowMeans(select(., pH..max.,    pH..min.),    na.rm = TRUE)
+  ) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    `Temp (C)`  = mean(Temp_mean, na.rm = TRUE),
+    `pH (mean)` = mean(pH_mean, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+Month_CApro <- DailypW_CApro %>%
+  mutate(
+    Date = yearmonth(Date)
+  ) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    `Temp (C)`  = mean(`Temp (C)`,  na.rm = TRUE),
+    `pH (mean)` = mean(`pH (mean)`, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+QCA_pro <- QCA_pro %>%
+  mutate(
+    site_no = as.character(site_no),       
+    Date    = yearmonth(Date)               
+  )
+
+Month_CApro <- Month_CApro %>%
+  mutate(
+    site_no = str_pad(as.character(site_no), width = 8, pad = "0"),
+    Date    = yearmonth(Date)
+  )
+
+CAdata_protected <- QCA_pro %>%
+  left_join(Month_CApro, by = c("site_no","Date")) %>%
+  select(site_no, Date, Flow, `Temp (C)`, `pH (mean)`)
+
+  # AZ data 
+AZraw <- read.csv(
+  "https://raw.githubusercontent.com/hvelicer/ESS330_finalproject/refs/heads/main/AZdata_protected.csv",
+  stringsAsFactors = FALSE
+)
+
+DailypW_AZpro <- AZraw %>%
+  mutate(Date = mdy(Date)) %>% 
+  mutate(across(
+    c(Temp..max., Temp..min., `pH..max.`, `pH..min.`),
+    ~ as.numeric(.)
+  )) %>%
+  mutate(
+    Temp_mean = rowMeans(select(., Temp..max.,  Temp..min.), na.rm = TRUE),
+    pH_mean   = rowMeans(select(., pH..max.,     pH..min.),    na.rm = TRUE)
+  ) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    Flow       = mean(Discharge..mean., na.rm = TRUE),
+    `Temp (C)` = mean(Temp..mean.,        na.rm = TRUE),
+    `pH (mean)`= mean(pH_mean,          na.rm = TRUE),
+    .groups    = "drop"
+  )
+
+AZdata_protected <- DailypW_AZpro %>%
+  mutate(Date = yearmonth(Date)) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    Flow       = mean(Flow,       na.rm = TRUE),
+    `Temp (C)` = mean(`Temp (C)`, na.rm = TRUE),
+    `pH (mean)`= mean(`pH (mean)`,na.rm = TRUE),
+    .groups    = "drop"
+  )
+
+  # UT data
+UTraw <- read.csv(
+  "https://raw.githubusercontent.com/hvelicer/ESS330_finalproject/main/UTdata_protected.csv",
+  stringsAsFactors = FALSE
+)
+
+DailypW_UTpro <- UTraw %>%
+  mutate(Date = mdy(Date)) %>% 
+  mutate(across(
+    c(Temp..max., Temp..min., `pH..max.`, `pH..min.`),
+    ~ as.numeric(.)
+  )) %>%
+  mutate(
+    Temp_mean = rowMeans(select(., Temp..max.,  Temp..min.), na.rm = TRUE),
+    pH_mean   = rowMeans(select(., pH..max.,     pH..min.),    na.rm = TRUE)
+  ) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    Flow       = mean(Discharge..mean., na.rm = TRUE),
+    `Temp (C)` = mean(Temp_mean,        na.rm = TRUE),
+    `pH (mean)`= mean(pH_mean,          na.rm = TRUE),
+    .groups    = "drop"
+  )
+
+UTdata_protected <- DailypW_UTpro %>%
+  mutate(Date = yearmonth(Date)) %>%
+  group_by(site_no, Date) %>%
+  summarise(
+    Flow       = mean(Flow,       na.rm = TRUE),
+    `Temp (C)` = mean(`Temp (C)`, na.rm = TRUE),
+    `pH (mean)`= mean(`pH (mean)`,na.rm = TRUE),
+    .groups    = "drop"
+  )
+```
+
+```{r}
+head(COdata_protected1)
+head(COdata_protected2)
+head(CAdata_protected)
+head(AZdata_protected)
+head(UTdata_protected)
+```
+
+
+```{r}
+# 1) bind & tag
+unprotected_all <- bind_rows(
+  COdata_unprotected1 %>% mutate(site_no = as.character(site_no)),
+  COdata_unprotected2 %>% mutate(site_no = as.character(site_no)),
+  CAdata_unprotected   %>% mutate(site_no = as.character(site_no)),
+  AZdata_unprotected   %>% mutate(site_no = as.character(site_no)),
+  UTdata_unprotected   %>% mutate(site_no = as.character(site_no))
+) %>%
+  mutate(protection = "Unprotected")
+
+protected_all <- bind_rows(
+  COdata_protected1 %>% mutate(site_no = as.character(site_no)),
+  COdata_protected2 %>% mutate(site_no = as.character(site_no)),
+  CAdata_protected  %>% mutate(site_no = as.character(site_no)),
+  AZdata_protected  %>% mutate(site_no = as.character(site_no)),
+  UTdata_protected  %>% mutate(site_no = as.character(site_no))
+) %>%
+  mutate(protection = "Protected")
+
+# 2) factorize **after** sub‐setting (so you only get the levels you actually have)
+unprotected_all <- unprotected_all %>% mutate(site_no = factor(site_no))
+protected_all   <- protected_all   %>% mutate(site_no = factor(site_no))
+
+# 3) helper
+make_panel <- function(df, yvar, title) {
+  ggplot(df, aes(x = Date, y = .data[[yvar]], colour = site_no)) +
+    geom_line(size = 0.3,   na.rm = TRUE) +
+    geom_point(size = 0.8,  na.rm = TRUE) +
+    labs(title = title, x = NULL, y = NULL, colour = "Site") +
+    theme_minimal()
+}
+
+# 4) build
+p_flow_un <- make_panel(unprotected_all, "Flow",      "Unprotected Flow")
+ggplotly(p_flow_un)
+p_temp_un <- make_panel(unprotected_all, "Temp (C)",  "Unprotected Temp (C)")
+ggplotly(p_temp_un)
+p_ph_un   <- make_panel(unprotected_all, "pH (mean)", "Unprotected pH (mean)")
+ggplotly(p_ph_un)
+
+p_flow_pr <- make_panel(protected_all,   "Flow",      "Protected Flow")
+ggplotly(p_flow_pr)
+p_temp_pr <- make_panel(protected_all,   "Temp (C)",  "Protected Temp (C)")
+ggplotly(p_temp_pr)
+p_ph_pr   <- make_panel(protected_all,   "pH (mean)", "Protected pH (mean)")
+ggplotly(p_ph_pr)
+
+# 5) stack
+Yearly_un <- ggarrange(
+  p_flow_un, p_temp_un, p_ph_un,
+  ncol = 1, nrow = 3,
+  common.legend = TRUE, legend = "bottom"
+)
+
+Yearly_pr <- ggarrange(
+  p_flow_pr, p_temp_pr, p_ph_pr,
+  ncol = 1, nrow = 3,
+  common.legend = TRUE, legend = "bottom"
+)
+
+Yearly_both <- ggarrange(
+  Yearly_un, Yearly_pr,
+  ncol   = 2, widths = c(1,1),
+  label.x = c(0.05, 0.55),
+  label.y = 1.02
+)
+
+print(Yearly_both)
+```
+
+```{r}
+# Looking at seasonal data
+library(tsibble)
+library(feasts)
+library(plotly)
+
+# turn your data into a tsibble
+ts_unprotected <- unprotected_all %>%
+  as_tsibble(key = site_no, index = Date)
+ts_protected <- protected_all %>% 
+  as_tsibble(key = site_no, index = Date)
+
+# 1) Unprotected
+p_sub_flow_un <- ts_unprotected %>% 
+  gg_subseries(Flow) +
+  labs(title="Unprotected Flow Subseries")
+p_sub_temp_un <- ts_unprotected %>% 
+  gg_subseries(`Temp (C)`) +
+  labs(title="Unprotected Temp (C) Subseries")
+p_sub_ph_un <- ts_unprotected %>% 
+  gg_subseries(`pH (mean)`) +
+  labs(title="Unprotected pH (mean) Subseries")
+
+# 2) Protected 
+p_sub_flow_pr <- ts_protected %>% 
+  gg_subseries(Flow) +
+  labs(title="Protected Flow Subseries")
+p_sub_temp_pr <- ts_protected %>% 
+  gg_subseries(`Temp (C)`) +
+  labs(title="Protected Temp (C) Subseries")
+p_sub_ph_pr <- ts_protected %>% 
+  gg_subseries(`pH (mean)`) +
+  labs(title="Protected pH (mean) Subseries")
+
+ggplotly(p_sub_flow_un)
+ggplotly(p_sub_temp_un)
+ggplotly(p_sub_ph_un)
+ggplotly(p_sub_flow_pr)
+ggplotly(p_sub_temp_pr)
+ggplotly(p_sub_ph_pr)
+```
+
