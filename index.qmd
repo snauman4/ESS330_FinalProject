@@ -13,8 +13,8 @@ execute:
 
 BLAH
 
-# Exploring the Data
-
+# Results
+## Reading and Cleaning Unprotected Sites
 ```{r}
 library(tidyverse)
 library(dataRetrieval)
@@ -293,7 +293,7 @@ head(COdata_unprotected2)
 head(CAdata_unprotected)
 head(UTdata_unprotected)
 ```
-
+## Reading and Cleaning Protected Sites
 ```{r}
   # CO protected 1
 QCO_pro1=readNWISdv(
@@ -539,7 +539,7 @@ head(AZdata_protected)
 head(UTdata_protected)
 ```
 
-
+## Yearly Flow, Water Temperature (C), and pH (mean)
 ```{r}
 # 1) bind & tag
 unprotected_all <- bind_rows(
@@ -610,7 +610,8 @@ Yearly_both <- ggarrange(
 
 print(Yearly_both)
 ```
-
+We first visualized monthly flow, temperature, and pH trends separately for unprotected and protected sites over the years of 1975-10-01 (water year 1976) to 2024-10-01 (beginning of water year 2025). In the unprotected basins, flow exhibits large spikes, mainly at USGS site 9315000, during spring and early summer months, whereas the other four unprotected sites remain relatively low and stable throughout the record. Protected sites show a similar seasonal pulse in flow (notably at 09163500 and 9261000) but with generally lower peak magnitudes compared to the highest‐flow unprotected basin. Temperature time‐series at both unprotected and protected sites display pronounced annual cycles, with summer highs around 20–25 °C and winter lows near 0–5 °C. However, the timing and amplitude of those cycles vary by site based on elevation and location. The pH plots reveal tight clustering around neutral to slightly alkaline values (7.5–8.5 pH) across all sites, with only minor month‐to‐month fluctuations and no obvious long‐term drift.
+## Seasonal Flows
 ```{r}
 # Looking at seasonal data
 library(tsibble)
@@ -627,29 +628,54 @@ ts_protected <- protected_all %>%
 p_sub_flow_un <- ts_unprotected %>% 
   gg_subseries(Flow) +
   labs(title="Unprotected Flow Subseries")
-p_sub_temp_un <- ts_unprotected %>% 
-  gg_subseries(`Temp (C)`) +
-  labs(title="Unprotected Temp (C) Subseries")
-p_sub_ph_un <- ts_unprotected %>% 
-  gg_subseries(`pH (mean)`) +
-  labs(title="Unprotected pH (mean) Subseries")
 
 # 2) Protected 
 p_sub_flow_pr <- ts_protected %>% 
   gg_subseries(Flow) +
   labs(title="Protected Flow Subseries")
-p_sub_temp_pr <- ts_protected %>% 
-  gg_subseries(`Temp (C)`) +
-  labs(title="Protected Temp (C) Subseries")
-p_sub_ph_pr <- ts_protected %>% 
-  gg_subseries(`pH (mean)`) +
-  labs(title="Protected pH (mean) Subseries")
 
 ggplotly(p_sub_flow_un)
-ggplotly(p_sub_temp_un)
-ggplotly(p_sub_ph_un)
 ggplotly(p_sub_flow_pr)
-ggplotly(p_sub_temp_pr)
-ggplotly(p_sub_ph_pr)
 ```
+Seasonal subseries plots break down each site’s flow into monthly panels. Seasonal flow subseries for protected sites reveal a clear pulse each June, with median monthly flows peaking higher than in other months and relatively tight variability across years. On the other hand, winter months (December–February) consistently exhibit near‐zero median flows and minimal spread. In contrast, unprotected basins also peak in June but display much broader variability, particularly in April–July, while their winter panels remain clustered near zero, highlighting more pronounced seasonal swings in flow at unprotected locations.
 
+## Statistical Tests
+```{r}
+# 1) combine into one df
+combined <- bind_rows(
+  unprotected_all,
+  protected_all
+) %>% 
+  mutate(
+    protection = factor(protection, levels = c("Unprotected","Protected")),
+    site_no    = factor(site_no)
+  )
+
+# 2) ANOVA by protection
+anova_flow <- aov(Flow       ~ protection, data = combined)
+anova_temp <- aov(`Temp (C)` ~ protection, data = combined)
+anova_ph   <- aov(`pH (mean)`~ protection, data = combined)
+
+summary(anova_flow)
+summary(anova_temp)
+summary(anova_ph)
+
+# 3) two‐sample t‐tests by protection
+t.test(Flow       ~ protection, data = combined)
+t.test(`Temp (C)` ~ protection, data = combined)
+t.test(`pH (mean)`~ protection, data = combined)
+
+# 4) if variances aren’t equal, switch to Welch’s ANOVA
+oneway.test(Flow ~ site_no, data = unprotected_all, var.equal = FALSE)
+oneway.test(Flow ~ site_no, data = protected_all,   var.equal = FALSE)
+
+# 5) post‐hoc pairwise comparisons
+anova_un_flow <- aov(Flow       ~ site_no, data = unprotected_all)
+TukeyHSD(anova_un_flow)
+
+anova_pr_flow <- aov(Flow       ~ site_no, data = protected_all)
+TukeyHSD(anova_pr_flow)
+```
+Across our full monthly dataset with the combined protected and unprotected sites, one‐way ANOVAs showed significant differences between Protected vs. Unprotected sites for Flow (p < 2e-16), Temp (p = 4.32e-15), and pH (p = 1.1e-15). Welch two‐sample t‐tests confirmed that mean monthly Flow was higher at Protected sites (protected = 2177.551 vs. unprotected 1254.596 cfs, p < 2e-16), while Unprotected sites were warmer (unprotected = 15.46 vs. protected = 13.09 °C, p = 2.749e-15) and more alkaline/higher pH (unprotected = 8.33 vs. protected = 8.01, p = 1.364e-12). Within each protection class, one‐way ANOVAs of Flow by site_no were also highly significant (Unprotected: p < 2.2e-15; Protected: p < 2.2e-16). In addition, the post‐hoc Tukey HSD table shows which specific pairs have a statistically significant difference in mean flow (adjusted p-value < 0.05).
+
+# Discussion
