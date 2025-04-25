@@ -340,6 +340,7 @@ UTdata_unprotected <- DailypW_UTunpro %>%
 head(COdata_unprotected1)
 head(COdata_unprotected2)
 head(CAdata_unprotected)
+head(AZdata_unprotected)
 head(UTdata_unprotected)
 ```
 ## Reading and Cleaning Protected Sites
