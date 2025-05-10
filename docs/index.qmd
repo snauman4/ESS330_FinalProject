@@ -45,6 +45,76 @@ In addition to spatial comparisons, we will also use temporal analysis to look f
 
 - *Unprotected Site (UT):* USGS 09315000, is located in Emery County, Utah on the Green River at an elevation of 4, 043 feet and a drainage area of 44,850 sq miles. 
 
+### Map of All 10 Sites
+```{r}
+# Load required libraries
+library(ggplot2)
+library(sf)
+library(tigris)
+library(dplyr)
+library(ggrepel)
+library(rnaturalearth)
+library(rnaturalearthdata)
+
+# Prepare USGS Sites Data
+usgs_sites <- tibble::tribble(
+  ~site_id,      ~site_name,                                      ~status,       ~lat,      ~lon,
+  "06752260",    "Cache la Poudre River, Fort Collins, CO",       "Protected",    40.5853,  -105.0844,
+  "09034250",    "Colorado River at Windy Gap near Granby, CO",   "Unprotected",  40.1106,  -106.0022,
+  "09163500",    "Colorado River near CO-UT state line",          "Protected",    39.1911,  -109.0238,
+  "09147500",    "Uncompahgre River, Colona, CO",                 "Unprotected",  38.3692,  -107.7981,
+  "11044000",    "Santa Margarita River near Temecula, CA",       "Protected",    33.4806,  -117.1406,
+  "11074000",    "Santa Ana River below Prado Dam, CA",           "Unprotected",  33.9111,  -117.6078,
+  "09510000",    "Verde River below Bartlett Dam, AZ",            "Protected",    33.7750,  -111.6558,
+  "09505800",    "West Clear Creek near Camp Verde, AZ",          "Unprotected",  34.5561,  -111.7303,
+  "09261000",    "Green River near Jensen, UT",                   "Protected",    40.4400,  -109.2483,
+  "09315000",    "Green River at Emery County, UT",               "Unprotected",  38.9670,  -110.1456
+)
+
+## Convert to sf object
+usgs_sites_sf <- st_as_sf(usgs_sites, coords = c("lon", "lat"), crs = 4326)
+
+# Get state borders excluding AK and HI
+us_states <- states(cb = TRUE, resolution = "20m") %>%
+  filter(!NAME %in% c("Alaska", "Hawaii", "Puerto Rico")) %>%
+  st_as_sf()
+
+# National borders (world outline, from rnaturalearth)
+us_border <- ne_countries(scale = "medium", returnclass = "sf") %>%
+  filter(admin == "United States of America")
+
+# Project all to Albers Equal Area for the US
+albers_crs <- 5070
+usgs_sites_proj <- st_transform(usgs_sites_sf, crs = albers_crs)
+us_states_proj <- st_transform(us_states, crs = albers_crs)
+us_border_proj <- st_transform(us_border, crs = albers_crs)
+
+# Crop to CONUS bounding box
+bbox_conus <- st_bbox(c(xmin = -125, xmax = -66, ymin = 24, ymax = 50), crs = 4326) %>%
+  st_as_sfc() %>% st_transform(crs = albers_crs)
+
+us_border_proj <- st_crop(us_border_proj, bbox_conus)
+us_states_proj <- st_crop(us_states_proj, bbox_conus)
+usgs_sites_proj <- st_crop(usgs_sites_proj, bbox_conus)
+
+# Separate sites by protection status
+protected_sites <- usgs_sites_proj %>% filter(status == "Protected")
+unprotected_sites <- usgs_sites_proj %>% filter(status == "Unprotected")
+
+# Final map
+ggplot() +
+  geom_sf(data = us_border_proj, fill = NA, color = "navy", lty = 1) +
+  geom_sf(data = us_states_proj, fill = NA, color = "grey", lty = 2, size = 0.5) +
+  geom_sf(data = protected_sites, color = "darkgreen", size = 2) +
+  geom_sf(data = unprotected_sites, color = "red", size = 2) +
+ 
+  theme_minimal() +
+  labs(
+    title = "USGS Sites: Protected (Green) and Unprotected (Red)",
+    color = "Site Status"
+  ) 
+```
+
 From each of the sites listed above, we obtained daily measurements of streamflow in cubic feet per seconds, water temperature in celsius, and pH levels from the daily data tab on the USGS National Water Information System. In this step of our analysis we reached some issues regarding when data time frames were available, ultimately leading to our decision to have our temporal scope be set between 1975-10-01 (water year 1976) to 2024-10-01 (beginning of water year 2025). In addition to this, we decided to facilitate our analysis by coding our daily values– Flow (cfs), Water Temperature (°C), and pH– to be aggregated into monthly means to be able to observe seasonal variation and reduce short-term noise. All analyses were conducted using Rstudio for visualization, statistical analysis, and mapping into figures. 
 	
 To quantitatively assess whether environmental protection status is associated with differences in water quality, we conducted the following statistical tests:
@@ -334,15 +404,6 @@ UTdata_unprotected <- DailypW_UTunpro %>%
     .groups    = "drop"
   )
 ```
-
-
-```{r}
-head(COdata_unprotected1)
-head(COdata_unprotected2)
-head(CAdata_unprotected)
-head(AZdata_unprotected)
-head(UTdata_unprotected)
-```
 ## Reading and Cleaning Protected Sites
 ```{r}
   # CO protected 1
@@ -580,17 +641,41 @@ UTdata_protected <- DailypW_UTpro %>%
     .groups    = "drop"
   )
 ```
-
+### Standardizing the Flow of Each Site
 ```{r}
-head(COdata_protected1)
-head(COdata_protected2)
-head(CAdata_protected)
-head(AZdata_protected)
-head(UTdata_protected)
-```
+# standardizing the flow of each site
+  # Unprotected
+COdata_unprotected1 <- COdata_unprotected1 %>%
+  mutate(standardized_flow = Flow / 788)
 
-## Yearly Flow, Water Temperature (C), and pH (mean)
-```{r}
+COdata_unprotected2 <- COdata_unprotected2 %>%
+  mutate(standardized_flow = Flow / 448) 
+
+CAdata_unprotected <- CAdata_unprotected %>%
+  mutate(standardized_flow = Flow / 2258)
+
+AZdata_unprotected <- AZdata_unprotected %>%
+  mutate(standardized_flow = Flow / 241)
+
+UTdata_unprotected <- UTdata_unprotected %>%
+  mutate(standardized_flow = Flow / 44850)
+
+  # Protected
+COdata_protected1 <- COdata_protected1 %>%
+  mutate(standardized_flow = Flow / 1128)
+
+COdata_protected2 <- COdata_protected2 %>%
+  mutate(standardized_flow = Flow / 17849)
+
+CAdata_protected <- CAdata_protected %>%
+  mutate(standardized_flow = Flow / 588)
+
+AZdata_protected <- AZdata_protected %>%
+  mutate(standardized_flow = Flow / 6161)
+
+UTdata_protected <- UTdata_protected %>%
+  mutate(standardized_flow = Flow / 29660)
+
 # 1) bind & tag
 unprotected_all <- bind_rows(
   COdata_unprotected1 %>% mutate(site_no = as.character(site_no)),
@@ -599,7 +684,7 @@ unprotected_all <- bind_rows(
   AZdata_unprotected   %>% mutate(site_no = as.character(site_no)),
   UTdata_unprotected   %>% mutate(site_no = as.character(site_no))
 ) %>%
-  mutate(protection = "Unprotected")
+  mutate(protection = "Unprotected") 
 
 protected_all <- bind_rows(
   COdata_protected1 %>% mutate(site_no = as.character(site_no)),
@@ -613,8 +698,11 @@ protected_all <- bind_rows(
 # 2) factorize **after** sub‐setting (so you only get the levels you actually have)
 unprotected_all <- unprotected_all %>% mutate(site_no = factor(site_no))
 protected_all   <- protected_all   %>% mutate(site_no = factor(site_no))
+```
 
-# 3) helper
+## Yearly Flow, Water Temperature (C), and pH (mean)
+```{r}
+# 3) Setting Up the Plots
 make_panel <- function(df, yvar, title) {
   ggplot(df, aes(x = Date, y = .data[[yvar]], colour = site_no)) +
     geom_line(size = 0.3,   na.rm = TRUE) +
@@ -624,19 +712,13 @@ make_panel <- function(df, yvar, title) {
 }
 
 # 4) build
-p_flow_un <- make_panel(unprotected_all, "Flow",      "Unprotected Flow")
-ggplotly(p_flow_un)
+p_flow_un <- make_panel(unprotected_all, "standardized_flow", "Unprotected Standardized Flow")
 p_temp_un <- make_panel(unprotected_all, "Temp (C)",  "Unprotected Temp (C)")
-ggplotly(p_temp_un)
 p_ph_un   <- make_panel(unprotected_all, "pH (mean)", "Unprotected pH (mean)")
-ggplotly(p_ph_un)
 
-p_flow_pr <- make_panel(protected_all,   "Flow",      "Protected Flow")
-ggplotly(p_flow_pr)
+p_flow_pr <- make_panel(protected_all, "standardized_flow", "Protected Standardized Flow")
 p_temp_pr <- make_panel(protected_all,   "Temp (C)",  "Protected Temp (C)")
-ggplotly(p_temp_pr)
 p_ph_pr   <- make_panel(protected_all,   "pH (mean)", "Protected pH (mean)")
-ggplotly(p_ph_pr)
 
 # 5) stack
 Yearly_un <- ggarrange(
@@ -658,9 +740,10 @@ Yearly_both <- ggarrange(
   label.y = 1.02
 )
 
-print(Yearly_both)
+print(Yearly_both) # ggsave and then print it from the files if it does not show up
 ```
-We first visualized monthly flow, temperature, and pH trends separately for unprotected and protected sites over the years of 1975-10-01 (water year 1976) to 2024-10-01 (beginning of water year 2025). In the unprotected basins, flow exhibits large spikes, mainly at USGS site 9315000, during spring and early summer months, whereas the other four unprotected sites remain relatively low and stable throughout the record. Protected sites show a similar seasonal pulse in flow (notably at 09163500 and 9261000) but with generally lower peak magnitudes compared to the highest‐flow unprotected basin. Temperature time‐series at both unprotected and protected sites display pronounced annual cycles, with summer highs around 20–25 °C and winter lows near 0–5 °C. However, the timing and amplitude of those cycles vary by site based on elevation and location. The pH plots reveal tight clustering around neutral to slightly alkaline values (7.5–8.5 pH) across all sites, with only minor month‐to‐month fluctuations and no obvious long‐term drift.
+We first visualized monthly flow, temperature, and pH trends separately for unprotected and protected sites over the years of 1975-10-01 (water year 1976) to 2024-10-01 (beginning of water year 2025). In the unprotected basins, the flow time series reveals substantial fluctuations, particularly in USGS sites 9505800, 09034250, and 09147500, with large peaks at different points over time, whereas the other unprotected sites remain relatively low and stable throughout the record. Protected sites show a similar seasonal pulse in flow (notable at 06752260 and 09163500), but displayed lower values than the unprotected sites. Temperature time series at both unprotected and protected sites display pronounced annual cycles, with summer highs around 20–25 °C and winter lows near 0–5 °C. However, the timing and amplitude of those cycles vary by site based on elevation and location. The pH plots reveal tight clustering around neutral to slightly alkaline values (7.5–8.5 pH) across all sites, with only minor month‐to‐month fluctuations and no obvious long‐term drift.
+
 ## Seasonal Flows
 ```{r}
 # Looking at seasonal data
@@ -676,18 +759,70 @@ ts_protected <- protected_all %>%
 
 # 1) Unprotected
 p_sub_flow_un <- ts_unprotected %>% 
-  gg_subseries(Flow) +
-  labs(title="Unprotected Flow Subseries")
+  gg_subseries(standardized_flow) +
+  labs(title="Unprotected Standardized Flow Subseries")
 
 # 2) Protected 
 p_sub_flow_pr <- ts_protected %>% 
-  gg_subseries(Flow) +
-  labs(title="Protected Flow Subseries")
+  gg_subseries(standardized_flow) +
+  labs(title="Protected Standardized Flow Subseries")
 
 ggplotly(p_sub_flow_un)
 ggplotly(p_sub_flow_pr)
 ```
-Seasonal subseries plots break down each site’s flow into monthly panels. Seasonal flow subseries for protected sites reveal a clear pulse each June, with median monthly flows peaking higher than in other months and relatively tight variability across years. On the other hand, winter months (December–February) consistently exhibit near‐zero median flows and minimal spread. In contrast, unprotected basins also peak in June but display much broader variability, particularly in April–July, while their winter panels remain clustered near zero, highlighting more pronounced seasonal swings in flow at unprotected locations.
+Seasonal subseries plots break down each site’s flow into monthly panels. Both the protected and unprotected sites reveal either a clear pulse each in the summer or the winter months, with median monthly flows peaking higher than in the other months, with relatively tight variability across years. Unprotected USGS sites 09034250 and 09147500, with large peaks in the summer months. Along with that, the unprotected USGS sites 9505800 and 1107400 exhibited large peaks in the winter months. The protected sites corresponding to its unprotected site location exhibited the same seasonal trends.
+
+## Seasonal Decomposition
+```{r}
+library(zoo)
+
+# UNPROTECTED
+# Impute missing values using linear interpolation
+ts_unprotected_imputed <- ts_unprotected %>%
+  mutate(standardized_flow = na.approx(standardized_flow, rule = 2)) %>%  # rule=2 allows interpolation at boundaries
+  mutate(Date = yearmonth(Date)) %>%
+  as_tsibble(index = Date, key = site_no)
+
+# Proceed with STL decomposition after imputation
+decomp_unprotected_flow_imputed <- ts_unprotected_imputed %>%
+  model(STL(standardized_flow ~ season(window = 12))) %>%
+  components()
+
+# Plot the decomposition
+p_decomp_un_flow_imputed <- autoplot(decomp_unprotected_flow_imputed, level = NULL) +
+  labs(title = "Seasonal Decomposition of Unprotected Flow") +
+  scale_color_manual(values = c("red", "blue", "green", "purple", "orange"), # Assign colors to each site_no
+                     labels = c("09034250", "09147500", "11074000", "9315000", "9505800")) +  # Update legend with site numbers
+  theme_minimal() +
+  theme(legend.title = element_blank()) 
+
+# Show the decomposition plot
+print(p_decomp_un_flow_imputed)
+
+# PROTECTED
+# Impute missing values using linear interpolation for protected sites
+ts_protected_imputed <- ts_protected %>%
+  mutate(standardized_flow = na.approx(standardized_flow, rule = 2)) %>%  # rule=2 allows interpolation at boundaries
+  mutate(Date = yearmonth(Date)) %>%
+  as_tsibble(index = Date, key = site_no)
+
+# Proceed with STL decomposition after imputation for protected sites
+decomp_protected_flow_imputed <- ts_protected_imputed %>%
+  model(STL(standardized_flow ~ season(window = 12))) %>%
+  components()
+
+# Plot the decomposition for protected sites
+p_decomp_pro_flow_imputed <- autoplot(decomp_protected_flow_imputed, level = NULL) +
+  labs(title = "Seasonal Decomposition of Protected Flow") +
+  scale_color_manual(values = c("red", "blue", "green", "purple", "orange"), # Assign colors to each site_no
+                     labels = c("06752260", "09163500", "11044000", "09510000", "09261000")) +  # Update legend with site numbers
+  theme_minimal() +
+  theme(legend.title = element_blank())
+
+# Show the decomposition plot for protected sites
+print(p_decomp_pro_flow_imputed)
+```
+The seasonal decomposition of flow data for both protected and unprotected sites shows distinct patterns across the four panels. In the top panel, the raw or observed data reveal considerable fluctuations in flow over time, with large spikes observed during spring and early summer months at both site categories. The second panel, which represents the trend component, highlights the overall long-term patterns of flow, illustrating gradual increases and decreases in flow that are likely influenced by broader climatic or environmental trends. In the third panel, the seasonal component captures the regular, repeating flow cycles, likely driven by seasonal changes such as snowmelt, precipitation patterns, and temperature fluctuations, with protected sites showing more uniform seasonal patterns. Lastly, the final panel, showing the remainder or residuals, captures the noise or random fluctuations that cannot be explained by the trend or seasonal cycles. These residuals demonstrate the unpredictable deviations from the expected seasonal flow, with the unprotected sites exhibiting greater variability in the flow compared to the more stable protected sites.
 
 ## Statistical Tests
 ```{r}
@@ -702,7 +837,7 @@ combined <- bind_rows(
   )
 
 # 2) ANOVA by protection
-anova_flow <- aov(Flow       ~ protection, data = combined)
+anova_flow <- aov(standardized_flow      ~ protection, data = combined)
 anova_temp <- aov(`Temp (C)` ~ protection, data = combined)
 anova_ph   <- aov(`pH (mean)`~ protection, data = combined)
 
@@ -711,26 +846,26 @@ summary(anova_temp)
 summary(anova_ph)
 
 # 3) two‐sample t‐tests by protection
-t.test(Flow       ~ protection, data = combined)
+t.test(standardized_flow ~ protection, data = combined)
 t.test(`Temp (C)` ~ protection, data = combined)
 t.test(`pH (mean)`~ protection, data = combined)
 
 # 4) if variances aren’t equal, switch to Welch’s ANOVA
-oneway.test(Flow ~ site_no, data = unprotected_all, var.equal = FALSE)
-oneway.test(Flow ~ site_no, data = protected_all,   var.equal = FALSE)
+oneway.test(standardized_flow ~ site_no, data = unprotected_all, var.equal = FALSE)
+oneway.test(standardized_flow ~ site_no, data = protected_all,   var.equal = FALSE)
 
 # 5) post‐hoc pairwise comparisons
-anova_un_flow <- aov(Flow       ~ site_no, data = unprotected_all)
+anova_un_flow <- aov(standardized_flow ~ site_no, data = unprotected_all)
 TukeyHSD(anova_un_flow)
 
-anova_pr_flow <- aov(Flow       ~ site_no, data = protected_all)
+anova_pr_flow <- aov(standardized_flow ~ site_no, data = protected_all)
 TukeyHSD(anova_pr_flow)
 ```
-Across our full monthly dataset with the combined protected and unprotected sites, one‐way ANOVAs showed significant differences between Protected vs. Unprotected sites for Flow (p < 2e-16), Temp (p = 4.32e-15), and pH (p = 1.1e-15). Welch two‐sample t‐tests confirmed that mean monthly Flow was higher at Protected sites (protected = 2177.551 vs. unprotected 1254.596 cfs, p < 2e-16), while Unprotected sites were warmer (unprotected = 15.46 vs. protected = 13.09 °C, p = 2.749e-15) and more alkaline/higher pH (unprotected = 8.33 vs. protected = 8.01, p = 1.364e-12). Within each protection class, one‐way ANOVAs of Flow by site_no were also highly significant (Unprotected: p < 2.2e-15; Protected: p < 2.2e-16). In addition, the post‐hoc Tukey HSD table shows which specific pairs have a statistically significant difference in mean flow (adjusted p-value < 0.05). 
+Across our full monthly dataset with the combined protected and unprotected sites, one‐way ANOVAs showed significant differences between Protected vs. Unprotected sites for Flow (p < 2e-16), Temp (p = 4.32e-15), and pH (p = 1.1e-15). Welch two‐sample t‐tests confirmed that mean monthly Flow was lower at Protected sites (protected = 0.1539866 vs. unprotected 0.2705940 cfs, p < 2e-16), while unprotected sites were warmer (unprotected = 15.46 vs. protected = 13.09 °C, p = 2.749e-15) and more alkaline/higher pH (unprotected = 8.33 vs. protected = 8.01, p = 1.364e-12). Within each protection class, one‐way ANOVAs of Flow by site_no were also highly significant (Unprotected: p < 2.2e-16; Protected: p < 2.2e-16). In addition, the post‐hoc Tukey HSD table shows which specific pairs have a statistically significant difference in mean flow (adjusted p-value < 0.05), with the exception of unprotected USGS sites 9315000 and 11074000 (adjusted p-value = 0.9569) and protected USGS sites 9261000 and 06752260 (adjusted p-value = 0.828). 
 
 # Discussion
 
-The significance of our results is that it shows statistically significant differences in water quality through our indicators of Flow (cfs), Water Temperature (°C), and pH levels between protected and unprotected river sites across the Southwest River Basin region. Our analysis have supported this finding as the three, one-way ANOVA tests that were conducted confirmed that protection status plays a statistically significant role in influencing these hydrological and chemical properties ( Flow: p < 2e-16; Water Temperature: p = 4.32e-15; pH = 1.1e-15). The second statistical test, the Welsh two-sample t-tests,  we conducted also supported this through showing that protected sites showed a significantly higher average flow (21777.55 cfs) than unprotected sites (1254.60 cfs), as unprotected sites typically had higher water temperatures averages (15.46°C) in comparison to protected sites (13.09°C), and slightly more alkaline conditions (pH 8.33 vs 8.01). These results suggest that protection status is associated with both chemical and physical differences in the Southwest River Basin systems. With that being said, it is also important to note that site-specific factors like elevation, local land, and drainage area contribute meaningful to variability as we saw in the Welch one-way test and Tukey HSD post-hoc tests that further confirmed that not all protected and unprotected sites are hydrologically equivalent. 
+Our results shows statistically significant differences in water quality through two of our indicators Water Temperature (°C), and pH levels between protected and unprotected river sites across the Southwest River Basin region, but our Flow (cfs) indicator does not support our hypothesis as it showed lower streamflow levels at protected sites vs unprotected sites. Despite the flow being lower, the p-value is still under 0.01 so overall we *reject our null hypothesis*. Our analysis have supported this finding as the three, one-way ANOVA tests that were conducted confirmed that protection status plays a statistically significant role in influencing these hydrological and chemical properties ( Flow: p < 2e-16; Water Temperature: p = 4.32e-15; pH = 1.1e-15). The second statistical test, the Welsh two-sample t-tests,  we conducted also supported this through showing that protected sites showed a slightly lower average flow (0.1539866 cfs) than unprotected sites (0.2705940 cfs), as unprotected sites typically had higher water temperatures averages (15.46°C) in comparison to protected sites (13.09°C), and slightly more alkaline conditions (pH 8.33 vs 8.01). These results suggest that protection status is associated with both chemical and physical differences in the Southwest River Basin systems. With that being said, it is also important to note that site-specific factors like elevation, local land, and drainage area contribute meaningful to variability as we saw in the Welch one-way test and Tukey HSD post-hoc tests that further confirmed that not all protected and unprotected sites are hydrologically equivalent. 
 
 The implications of our findings are great in the fields of ecology and conservation. While our analysis shows statistically significant differences in the water quality indicators in protected and unprotected sites throughout the Southwest river basin regions, it is highlighting issues in site-level management and local geography with how we interact with our watershed systems. It also shows that although in our study, it favors that protected sites have healthier more balanced watershed systems this can instead be an issue regarding context-specific conservation strategies instead of favoring the assumption that a protection status alone is enough to guarantee healthy and quality river systems. 
 
