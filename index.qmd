@@ -789,16 +789,20 @@ ts_protected <- protected_all %>%
 p_sub_flow_un <- ts_unprotected %>% 
   gg_subseries(standardized_flow) +
   labs(title="Unprotected Standardized Flow Subseries")
-
+ggplotly(p_sub_flow_un)
+```
+#### Figure 3: Subseries showing seasonal trends in standardized flow at unprotected USGS sites
+```{r}
 # 2) Protected 
 p_sub_flow_pr <- ts_protected %>% 
   gg_subseries(standardized_flow) +
   labs(title="Protected Standardized Flow Subseries")
 
-ggplotly(p_sub_flow_un)
 ggplotly(p_sub_flow_pr)
 ```
-Seasonal subseries plots break down each site’s flow into monthly panels. Both the protected and unprotected sites reveal either a clear pulse each in the summer or the winter months, with median monthly flows peaking higher than in the other months, with relatively tight variability across years. Unprotected USGS sites 09034250 and 09147500, with large peaks in the summer months. Along with that, the unprotected USGS sites 9505800 and 1107400 exhibited large peaks in the winter months. The protected sites corresponding to its unprotected site location exhibited the same seasonal trends.
+#### Figure 4: Subseries showing seasonal trends in standardized flow at protected USGS sites
+
+Seasonal subseries plots break down each site’s flow into monthly panels. Both the protected and unprotected sites reveal either a clear pulse each in the summer or the winter months, with median monthly flows peaking higher than in the other months, with relatively tight variability across years. Unprotected USGS sites 09034250 and 09147500, with large peaks in the summer months (Figure 3). Along with that, the unprotected USGS sites 9505800 and 1107400 exhibited large peaks in the winter months. The protected sites corresponding to its unprotected site location exhibited the same seasonal trends (Figure 4).
 
 ## Seasonal Decomposition
 ```{r}
@@ -827,6 +831,18 @@ p_decomp_un_flow_imputed <- autoplot(decomp_unprotected_flow_imputed, level = NU
 # Show the decomposition plot
 print(p_decomp_un_flow_imputed)
 
+ggsave(
+  filename = "images/Figure5.png",
+  plot = p_decomp_un_flow_imputed,
+  width = 6,
+  height = 4,
+  dpi = 300
+)
+
+knitr::include_graphics("images/Figure5.png")
+```
+#### Figure 5: Decomposition of additive time series at the USGS unprotected sites.
+```{r}
 # PROTECTED
 # Impute missing values using linear interpolation for protected sites
 ts_protected_imputed <- ts_protected %>%
@@ -849,8 +865,20 @@ p_decomp_pro_flow_imputed <- autoplot(decomp_protected_flow_imputed, level = NUL
 
 # Show the decomposition plot for protected sites
 print(p_decomp_pro_flow_imputed)
+
+ggsave(
+  filename = "images/Figure6.png",
+  plot = p_decomp_pro_flow_imputed,
+  width = 6,
+  height = 4,
+  dpi = 300
+)
+
+knitr::include_graphics("images/Figure6.png")
 ```
-The seasonal decomposition of flow data for both protected and unprotected sites shows distinct patterns across the four panels. In the top panel, the raw or observed data reveal considerable fluctuations in flow over time, with large spikes observed during spring and early summer months at both site categories. The second panel, which represents the trend component, highlights the overall long-term patterns of flow, illustrating gradual increases and decreases in flow that are likely influenced by broader climatic or environmental trends. In the third panel, the seasonal component captures the regular, repeating flow cycles, likely driven by seasonal changes such as snowmelt, precipitation patterns, and temperature fluctuations, with protected sites showing more uniform seasonal patterns. Lastly, the final panel, showing the remainder or residuals, captures the noise or random fluctuations that cannot be explained by the trend or seasonal cycles. These residuals demonstrate the unpredictable deviations from the expected seasonal flow, with the unprotected sites exhibiting greater variability in the flow compared to the more stable protected sites.
+#### Figure 6: Decomposition of additive time series at USGS protected sites.
+
+The seasonal decomposition of flow data for both protected and unprotected sites shows distinct patterns across the four panels (Figures 5 and 6). In the top panel, the raw or observed data reveal considerable fluctuations in flow over time, with large spikes observed during spring and early summer months at both site categories (Figures 5 and 6). The second panel, which represents the trend component, highlights the overall long-term patterns of flow, illustrating gradual increases and decreases in flow that are likely influenced by broader climatic or environmental trends. In the third panel, the seasonal component captures the regular, repeating flow cycles, likely driven by seasonal changes such as snowmelt, precipitation patterns, and temperature fluctuations, with protected sites showing more uniform seasonal patterns. Lastly, the final panel, showing the remainder or residuals, captures the noise or random fluctuations that cannot be explained by the trend or seasonal cycles. These residuals demonstrate the unpredictable deviations from the expected seasonal flow, with the unprotected sites exhibiting greater variability in the flow compared to the more stable protected sites (Figures 5 and 6).
 
 ## Statistical Tests
 ```{r}
