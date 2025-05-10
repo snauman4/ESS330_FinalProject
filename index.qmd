@@ -102,20 +102,33 @@ protected_sites <- usgs_sites_proj %>% filter(status == "Protected")
 unprotected_sites <- usgs_sites_proj %>% filter(status == "Unprotected")
 
 # Final map
-ggplot() +
+map <- ggplot() +
   geom_sf(data = us_border_proj, fill = NA, color = "navy", lty = 1) +
   geom_sf(data = us_states_proj, fill = NA, color = "grey", lty = 2, size = 0.5) +
   geom_sf(data = protected_sites, color = "darkgreen", size = 2) +
   geom_sf(data = unprotected_sites, color = "red", size = 2) +
- 
   theme_minimal() +
   labs(
-    title = "USGS Sites: Protected (Green) and Unprotected (Red)",
+    title = "USGS Sites, Protected (Green) and Unprotected (Red)",
+    caption = "Figure 1: Map depicting the five protected sites and the five unprotected sites",
     color = "Site Status"
   ) 
-```
 
-From each of the sites listed above, we obtained daily measurements of streamflow in cubic feet per seconds, water temperature in celsius, and pH levels from the daily data tab on the USGS National Water Information System. In this step of our analysis we reached some issues regarding when data time frames were available, ultimately leading to our decision to have our temporal scope be set between 1975-10-01 (water year 1976) to 2024-10-01 (beginning of water year 2025). In addition to this, we decided to facilitate our analysis by coding our daily values– Flow (cfs), Water Temperature (°C), and pH– to be aggregated into monthly means to be able to observe seasonal variation and reduce short-term noise. All analyses were conducted using Rstudio for visualization, statistical analysis, and mapping into figures. 
+print(map)
+
+ggsave(
+  filename = "images/map.png",
+  plot = map,
+  width = 6, 
+  height = 4,
+  dpi = 300)
+
+knitr::include_graphics("images/map.png")
+```
+From each of the sites listed above and seen in Figure 1, we obtained daily measurements of streamflow in cubic feet per seconds, water temperature in celsius, and pH levels from the daily data tab on the USGS National Water Information System. In this step of our analysis we reached some issues regarding when data time frames were available, ultimately leading to our decision to have our temporal scope be set between 1975-10-01 (water year 1976) to 2024-10-01 (beginning of water year 2025). In addition to this, we decided to facilitate our analysis by coding our daily values– Flow (cfs), Water Temperature (°C), and pH– to be aggregated into monthly means to be able to observe seasonal variation and reduce short-term noise. All analyses were conducted using Rstudio for visualization, statistical analysis, and mapping into figures. Additionally, it was decided to standardize each site so that there is more of an apples-to-apples comparison with streamflow values. To do this, the streamflow values of each site were divided by the drainage area to get flow in cubic feet per second per mile squared, allowing for a direct comparison of flow characteristics across watersheds of different sizes. This process normalizes the flow data, making it easier to compare watersheds based on their flow intensity per unit area, irrespective of their size. 
+
+To create decomposition graphs for easier visualization to create conclusions from the values, we imputed missing values in time series data is crucial for maintaining the integrity of the analysis; especially when gaps in the data could distort trends and seasonal patterns. In this study, linear interpolation was used to fill in missing values, assuming that the missing data points are reasonably close to adjacent observations. This ensures a complete dataset, allowing for accurate seasonal decomposition. STL Decomposition (Seasonal and Trend decomposition using Loess) was then applied to separate the time series into trend, seasonal, and residual components, which helps identify underlying patterns in the flow data. By isolating the seasonal effects, long-term trends, and random fluctuations, this method provides valuable insights into how flow changes over time. The imputation and decomposition steps enabled clearer visualization of seasonal patterns, such as annual flow cycles, and long-term trends, allowing for comparison between unprotected and protected sites. This approach not only improves the robustness of the analysis but also facilitates a deeper understanding of the environmental factors influencing the watersheds.
+ 
 	
 To quantitatively assess whether environmental protection status is associated with differences in water quality, we conducted the following statistical tests:
 	
@@ -702,7 +715,10 @@ protected_all   <- protected_all   %>% mutate(site_no = factor(site_no))
 
 ## Yearly Flow, Water Temperature (C), and pH (mean)
 ```{r}
-# 3) Setting Up the Plots
+library(ggpubr)
+library(grid)
+
+# Setting Up the Plots
 make_panel <- function(df, yvar, title) {
   ggplot(df, aes(x = Date, y = .data[[yvar]], colour = site_no)) +
     geom_line(size = 0.3,   na.rm = TRUE) +
@@ -740,9 +756,21 @@ Yearly_both <- ggarrange(
   label.y = 1.02
 )
 
-print(Yearly_both) # ggsave and then print it from the files if it does not show up
+print(Yearly_both) 
+
+ggsave(
+  filename = "images/Figure2.png",
+  plot = Yearly_both,
+  width = 10,
+  height = 6,
+  dpi = 300
+)
+
+knitr::include_graphics("images/Figure2.png")
 ```
-We first visualized monthly flow, temperature, and pH trends separately for unprotected and protected sites over the years of 1975-10-01 (water year 1976) to 2024-10-01 (beginning of water year 2025). In the unprotected basins, the flow time series reveals substantial fluctuations, particularly in USGS sites 9505800, 09034250, and 09147500, with large peaks at different points over time, whereas the other unprotected sites remain relatively low and stable throughout the record. Protected sites show a similar seasonal pulse in flow (notable at 06752260 and 09163500), but displayed lower values than the unprotected sites. Temperature time series at both unprotected and protected sites display pronounced annual cycles, with summer highs around 20–25 °C and winter lows near 0–5 °C. However, the timing and amplitude of those cycles vary by site based on elevation and location. The pH plots reveal tight clustering around neutral to slightly alkaline values (7.5–8.5 pH) across all sites, with only minor month‐to‐month fluctuations and no obvious long‐term drift.
+#### Figure 2: 6-panel time series of standardized flow, temperature (C), and pH at unprotected and protected sites. 
+
+We first visualized monthly flow, temperature, and pH trends separately for unprotected and protected sites over the years of 1975-10-01 (water year 1976) to 2024-10-01 (beginning of water year 2025) in Figure 2. In the unprotected basins, the flow time series reveals substantial fluctuations, particularly in USGS sites 9505800, 09034250, and 09147500, with large peaks at different points over time, whereas the other unprotected sites remain relatively low and stable throughout the record. Protected sites show a similar seasonal pulse in flow (notable at 06752260 and 09163500), but displayed lower values than the unprotected sites. Temperature time series at both unprotected and protected sites display pronounced annual cycles, with summer highs around 20–25 °C and winter lows near 0–5 °C. However, the timing and amplitude of those cycles vary by site based on elevation and location. The pH plots reveal tight clustering around neutral to slightly alkaline values (7.5–8.5 pH) across all sites, with only minor month‐to‐month fluctuations and no obvious long‐term drift.
 
 ## Seasonal Flows
 ```{r}
