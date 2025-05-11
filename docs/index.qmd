@@ -788,8 +788,6 @@ Yearly_both <- ggarrange(
   label.y = 1.02
 )
 
-print(Yearly_both)
-
 ggsave(
   filename = "images/Figure2.png",
   plot = Yearly_both,
